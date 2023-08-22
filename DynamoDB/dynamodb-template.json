@@ -1,0 +1,26 @@
+Resources:
+  SimpleTableC6BC762D:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: item_id
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: item_id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: SimpleDynamoDb/SimpleTable/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAAAzWNUQrCMBBEz9L/dJvoBYQeQKm9QJpEjLW7kuwiJeTu2opfM8zjMQaM1qCbk33n1vm5K45SgHJl62Y1hEySXFD9Dc/CL2HVE2ZO4njb/ryqTfcr2oX8BGW003OX9lKruqx8J+yO3zcwh+aRY2yTIMclwPDLDxxMt4qKAAAA
+    Metadata:
+      aws:cdk:path: SimpleDynamoDb/CDKMetadata/Default
+Outputs:
+  TableName:
+    Value:
+      Ref: SimpleTableC6BC762D
+

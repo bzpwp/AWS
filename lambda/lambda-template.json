@@ -1,0 +1,87 @@
+Resources:
+  LambdaHandlerServiceRole8F7B4955:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: SimpleLambda/LambdaHandler/ServiceRole/Resource
+  LambdaHandlerServiceRoleDefaultPolicy52DB1F25:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sqs:SendMessage
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LambdaHandlerDeadLetterQueue8478E16F
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: LambdaHandlerServiceRoleDefaultPolicy52DB1F25
+      Roles:
+        - Ref: LambdaHandlerServiceRole8F7B4955
+    Metadata:
+      aws:cdk:path: SimpleLambda/LambdaHandler/ServiceRole/DefaultPolicy/Resource
+  LambdaHandlerDeadLetterQueue8478E16F:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: SimpleLambda/LambdaHandler/DeadLetterQueue/Resource
+  LambdaHandler212865DC:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          
+          import time
+          from random import choice, randint
+          def handler(event, context):
+              time.sleep(randint(2,5))
+              sushi = ["salmon", "tuna", "squid"]
+              message = "Welcome to Cloud Sushi. Your order is " + choice(sushi)
+              print(message)
+              return message
+      Role:
+        Fn::GetAtt:
+          - LambdaHandlerServiceRole8F7B4955
+          - Arn
+      DeadLetterConfig:
+        TargetArn:
+          Fn::GetAtt:
+            - LambdaHandlerDeadLetterQueue8478E16F
+            - Arn
+      Handler: index.handler
+      MemorySize: 128
+      Runtime: python3.7
+      Timeout: 10
+    DependsOn:
+      - LambdaHandlerServiceRoleDefaultPolicy52DB1F25
+      - LambdaHandlerServiceRole8F7B4955
+    Metadata:
+      aws:cdk:path: SimpleLambda/LambdaHandler/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAAAzWOUQ6CMBBEz8J/WUAvYELir4gnqEuNFehiuxtDmt5dC/Fr3kxmkmmgqWuoi5P+hBKHsYpI3kC8scZRtQ93EV6EVUsusBfknPUmkHg0SeVVnPR8HzTEszhkSy5X/pyU1TPEniazLbN2NFlcs90pqfAOEK9iZCttkFJS3cpPctXx9xGaQ/EK1pZeHNvZQL/rFytwTu/AAAAA
+    Metadata:
+      aws:cdk:path: SimpleLambda/CDKMetadata/Default
+Outputs:
+  FunctionName:
+    Value:
+      Ref: LambdaHandler212865DC
+

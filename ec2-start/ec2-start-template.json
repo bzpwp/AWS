@@ -1,0 +1,164 @@
+Resources:
+  MyFirstEc2Vpc16331741:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.10.0.0/23
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: MyFirstEc2/MyFirstEc2-Vpc
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2-Vpc/Resource
+  MyFirstEc2VpcpublicSubnet1Subnet25C82B83:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.10.0.0/23
+      VpcId:
+        Ref: MyFirstEc2Vpc16331741
+      AvailabilityZone: ap-northeast-1a
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: MyFirstEc2/MyFirstEc2-Vpc/publicSubnet1
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2-Vpc/publicSubnet1/Subnet
+  MyFirstEc2VpcpublicSubnet1RouteTableC0D3D094:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: MyFirstEc2Vpc16331741
+      Tags:
+        - Key: Name
+          Value: MyFirstEc2/MyFirstEc2-Vpc/publicSubnet1
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2-Vpc/publicSubnet1/RouteTable
+  MyFirstEc2VpcpublicSubnet1RouteTableAssociation495511DE:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: MyFirstEc2VpcpublicSubnet1RouteTableC0D3D094
+      SubnetId:
+        Ref: MyFirstEc2VpcpublicSubnet1Subnet25C82B83
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2-Vpc/publicSubnet1/RouteTableAssociation
+  MyFirstEc2VpcpublicSubnet1DefaultRoute7FAF0ED9:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: MyFirstEc2VpcpublicSubnet1RouteTableC0D3D094
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: MyFirstEc2VpcIGW8ADAC056
+    DependsOn:
+      - MyFirstEc2VpcVPCGW17C90449
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2-Vpc/publicSubnet1/DefaultRoute
+  MyFirstEc2VpcIGW8ADAC056:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyFirstEc2/MyFirstEc2-Vpc
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2-Vpc/IGW
+  MyFirstEc2VpcVPCGW17C90449:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: MyFirstEc2Vpc16331741
+      InternetGatewayId:
+        Ref: MyFirstEc2VpcIGW8ADAC056
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2-Vpc/VPCGW
+  MyFirstEc2VpcSgF6FD6F07:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MyFirstEc2/MyFirstEc2Vpc-Sg
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:22
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+      VpcId:
+        Ref: MyFirstEc2Vpc16331741
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2Vpc-Sg/Resource
+  MyFirstEc2InstanceInstanceRole5AC5F6BA:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: "2012-10-17"
+      Tags:
+        - Key: Name
+          Value: MyFirstEc2/MyFirstEc2Instance
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2Instance/InstanceRole/Resource
+  MyFirstEc2InstanceInstanceProfile71102CE4:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: MyFirstEc2InstanceInstanceRole5AC5F6BA
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2Instance/InstanceProfile
+  MyFirstEc2InstanceA8D694F8:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      IamInstanceProfile:
+        Ref: MyFirstEc2InstanceInstanceProfile71102CE4
+      ImageId:
+        Ref: SsmParameterValueawsserviceamiamazonlinuxlatestamznamihvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - MyFirstEc2VpcSgF6FD6F07
+            - GroupId
+      SubnetId:
+        Ref: MyFirstEc2VpcpublicSubnet1Subnet25C82B83
+      Tags:
+        - Key: Name
+          Value: MyFirstEc2/MyFirstEc2Instance
+      UserData:
+        Fn::Base64: "#!/bin/bash"
+    DependsOn:
+      - MyFirstEc2InstanceInstanceRole5AC5F6BA
+    Metadata:
+      aws:cdk:path: MyFirstEc2/MyFirstEc2Instance/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAAA1VQQY6DMAx8S+9pCt0PbMWh6mkjqHoPXlfNFmKUOKoQyt83KbBoTx6PR56xS1kWhSx2n/rl9/D9PExADuXUsIanqNFTcICiululne6R0eXmK/AQWFRkPbsAnLlVHEXeNSEc5XQbII9uqhIqtJ2BJrQW3/IN1RQYr7rtcOM37uQ9gdFsyP6JM7jYlCUpz5rxpcfFZulOnPI/erQsGoTgDI9nR2F4G/wjLukCbWFZOeMojO7lVNOcaK3rWDm6mw5jjEKN/CB7+EhflOVx9+ON2btg2fQo67n+AjRChnZiAQAA
+    Metadata:
+      aws:cdk:path: MyFirstEc2/CDKMetadata/Default
+Parameters:
+  SsmParameterValueawsserviceamiamazonlinuxlatestamznamihvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2
+Outputs:
+  InstancePublicDnsName:
+    Value:
+      Fn::GetAtt:
+        - MyFirstEc2InstanceA8D694F8
+        - PublicDnsName
+  InstancePublicIp:
+    Value:
+      Fn::GetAtt:
+        - MyFirstEc2InstanceA8D694F8
+        - PublicIp
+

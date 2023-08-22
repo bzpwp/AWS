@@ -1,0 +1,267 @@
+Resources:
+  EcsClusterQaBotTableECE4659D:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: item_id
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: item_id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Table/Resource
+  EcsClusterQaBotVpcDB6B09B3:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: EcsClusterQaBot/EcsClusterQaBot-Vpc
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Vpc/Resource
+  EcsClusterQaBotVpcpublicSubnet1SubnetBFE96D8D:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      VpcId:
+        Ref: EcsClusterQaBotVpcDB6B09B3
+      AvailabilityZone: ap-northeast-1a
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: EcsClusterQaBot/EcsClusterQaBot-Vpc/publicSubnet1
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Vpc/publicSubnet1/Subnet
+  EcsClusterQaBotVpcpublicSubnet1RouteTableC82F3D7D:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: EcsClusterQaBotVpcDB6B09B3
+      Tags:
+        - Key: Name
+          Value: EcsClusterQaBot/EcsClusterQaBot-Vpc/publicSubnet1
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Vpc/publicSubnet1/RouteTable
+  EcsClusterQaBotVpcpublicSubnet1RouteTableAssociation3CEE35F2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: EcsClusterQaBotVpcpublicSubnet1RouteTableC82F3D7D
+      SubnetId:
+        Ref: EcsClusterQaBotVpcpublicSubnet1SubnetBFE96D8D
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Vpc/publicSubnet1/RouteTableAssociation
+  EcsClusterQaBotVpcpublicSubnet1DefaultRoute85ED1048:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: EcsClusterQaBotVpcpublicSubnet1RouteTableC82F3D7D
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: EcsClusterQaBotVpcIGW513A9BDE
+    DependsOn:
+      - EcsClusterQaBotVpcVPCGW71841269
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Vpc/publicSubnet1/DefaultRoute
+  EcsClusterQaBotVpcIGW513A9BDE:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: EcsClusterQaBot/EcsClusterQaBot-Vpc
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Vpc/IGW
+  EcsClusterQaBotVpcVPCGW71841269:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: EcsClusterQaBotVpcDB6B09B3
+      InternetGatewayId:
+        Ref: EcsClusterQaBotVpcIGW513A9BDE
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Vpc/VPCGW
+  EcsClusterQaBotCluster6488E31F:
+    Type: AWS::ECS::Cluster
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-Cluster/Resource
+  EcsClusterQaBotTaskDefTaskRoleBA5E0567:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-TaskDef/TaskRole/Resource
+  EcsClusterQaBotTaskDefTaskRoleDefaultPolicy7D0DA113:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:ConditionCheckItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - EcsClusterQaBotTableECE4659D
+                  - Arn
+              - Ref: AWS::NoValue
+          - Action: ssm:GetParameter
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: EcsClusterQaBotTaskDefTaskRoleDefaultPolicy7D0DA113
+      Roles:
+        - Ref: EcsClusterQaBotTaskDefTaskRoleBA5E0567
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-TaskDef/TaskRole/DefaultPolicy/Resource
+  EcsClusterQaBotTaskDefE63BA336:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image: tomomano/qabot:latest
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: EcsClusterQaBotTaskDefEcsClusterQaBotContainerLogGroup7131505B
+              awslogs-stream-prefix: EcsClusterQaBot
+              awslogs-region: ap-northeast-1
+          Name: EcsClusterQaBot-Container
+      Cpu: "1024"
+      ExecutionRoleArn:
+        Fn::GetAtt:
+          - EcsClusterQaBotTaskDefExecutionRole6402124C
+          - Arn
+      Family: EcsClusterQaBotEcsClusterQaBotTaskDef54F4C2A5
+      Memory: "4096"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn:
+        Fn::GetAtt:
+          - EcsClusterQaBotTaskDefTaskRoleBA5E0567
+          - Arn
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-TaskDef/Resource
+  EcsClusterQaBotTaskDefEcsClusterQaBotContainerLogGroup7131505B:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 1
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-TaskDef/EcsClusterQaBot-Container/LogGroup/Resource
+  EcsClusterQaBotTaskDefExecutionRole6402124C:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-TaskDef/ExecutionRole/Resource
+  EcsClusterQaBotTaskDefExecutionRoleDefaultPolicyAEE6B75E:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - EcsClusterQaBotTaskDefEcsClusterQaBotContainerLogGroup7131505B
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: EcsClusterQaBotTaskDefExecutionRoleDefaultPolicyAEE6B75E
+      Roles:
+        - Ref: EcsClusterQaBotTaskDefExecutionRole6402124C
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/EcsClusterQaBot-TaskDef/ExecutionRole/DefaultPolicy/Resource
+  ECSCLUSTERNAMEFCB8CB4A:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Ref: EcsClusterQaBotCluster6488E31F
+      Name: ECS_CLUSTER_NAME
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/ECS_CLUSTER_NAME/Resource
+  ECSTASKDEFINITIONARNC226680E:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Ref: EcsClusterQaBotTaskDefE63BA336
+      Name: ECS_TASK_DEFINITION_ARN
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/ECS_TASK_DEFINITION_ARN/Resource
+  ECSTASKVPCSUBNET178013082:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Ref: EcsClusterQaBotVpcpublicSubnet1SubnetBFE96D8D
+      Name: ECS_TASK_VPC_SUBNET_1
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/ECS_TASK_VPC_SUBNET_1/Resource
+  CONTAINERNAMEC5F84D48:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: EcsClusterQaBot-Container
+      Name: CONTAINER_NAME
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/CONTAINER_NAME/Resource
+  TABLENAME7F96CC88:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Ref: EcsClusterQaBotTableECE4659D
+      Name: TABLE_NAME
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/TABLE_NAME/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAAA11RXW/CMAz8LbyH8LE/MNRpaNKkVWXi3Q2mBFobJY4QivLf17QUpD3lfD7nzslKr5ZLvZy9w83PzeGyiIYd6rgTMBdVoefgDKriSD9BrkFUweTFBSOZm/pJ5fF4uBN0fKh1/IW6HaYGkBSatY77q8nUvixUGerWml2oCYeLXqjiIPgcH/kXt/GejQWxTE9xBl8k6HrlFgRvcH/YPKqN9MucOiTJQbyORRt8r8+qCX6CayCb+MsHHi3ZyeI/wyRgCd2LS8pCp2PFY+ThLLlfb4gxoqRabnrnb262jsM1dyaclPddfnFnqSnBQYePcM8ipaTKu5yYFm/9h+nVenb21s5dILEd6mo8/wAxDCyqzQEAAA==
+    Metadata:
+      aws:cdk:path: EcsClusterQaBot/CDKMetadata/Default
+Outputs:
+  ClusterName:
+    Value:
+      Ref: EcsClusterQaBotCluster6488E31F
+  TaskDefinitionArn:
+    Value:
+      Ref: EcsClusterQaBotTaskDefE63BA336
+
